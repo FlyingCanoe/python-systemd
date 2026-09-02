@@ -44,6 +44,10 @@ build = [
     "meson>=1.8.2",
     "twine>=4.0.2",
 ]
+dev = [
+    "ruff>=0.16.3",
+    "ty>=0.0.71",
+]
 
 [build-system]
 requires = ["meson-python"]
@@ -64,3 +68,6 @@ exclude_lines = [
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --doctest-glob=*.rst --ignore=setup.py"
 norecursedirs = ".git build"
+
+[tool.ruff.lint]
+select=["ANN"]
