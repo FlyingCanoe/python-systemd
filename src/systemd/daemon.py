@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-from typing import IO
-import typing
+import typing as _typing
 from socket import AF_UNSPEC as _AF_UNSPEC
 
 from ._daemon import (__version__,
@@ -16,25 +15,30 @@ from ._daemon import (__version__,
                       _is_socket_unix,
                       _is_mq,
                       LISTEN_FDS_START)
-def _convert_fileobj(fileobj: IO | int) -> int:
+
+class _FileObject(_typing.Protocol):
+    def fileno(self) -> int:
+        ...
+
+def _convert_fileobj(fileobj: _FileObject | int) -> int:
     if isinstance(fileobj, int):
         return fileobj
     else:
         return fileobj.fileno()
 
-def is_fifo(fileobj: IO | int, path: str | None=None) -> bool:
+def is_fifo(fileobj: _FileObject | int, path: str | None=None) -> bool:
     fd = _convert_fileobj(fileobj)
     return _is_fifo(fd, path)
 
-def is_socket(fileobj: IO |int, family: int=_AF_UNSPEC, type: int=0, listening: int=-1) -> bool:
+def is_socket(fileobj: _FileObject |int, family: int=_AF_UNSPEC, type: int=0, listening: int=-1) -> bool:
     fd = _convert_fileobj(fileobj)
     return _is_socket(fd, family, type, listening)
 
-def is_socket_inet(fileobj: IO|int, family: int=_AF_UNSPEC, type: int=0, listening: int=-1, port: int=0) -> bool:
+def is_socket_inet(fileobj: _FileObject | int, family: int=_AF_UNSPEC, type: int=0, listening: int=-1, port: int=0) -> bool:
     fd = _convert_fileobj(fileobj)
     return _is_socket_inet(fd, family, type, listening, port)
 
-def is_socket_sockaddr(fileobj: IO|int, address: int, type: int=0, flowinfo: int=0, listening: int=-1) -> bool:
+def is_socket_sockaddr(fileobj: _FileObject | int, address: int, type: int=0, flowinfo: int=0, listening: int=-1) -> bool:
     """Check socket type, address and/or port, flowinfo, listening state.
 
     Wraps sd_is_socket_inet_sockaddr(3).
@@ -48,11 +52,11 @@ def is_socket_sockaddr(fileobj: IO|int, address: int, type: int=0, flowinfo: int
     fd = _convert_fileobj(fileobj)
     return _is_socket_sockaddr(fd, address, type, flowinfo, listening)
 
-def is_socket_unix(fileobj: IO|int, type: int=0, listening: int=-1, path: str|None=None) -> bool:
+def is_socket_unix(fileobj: _FileObject | int, type: int=0, listening: int=-1, path: str | None=None) -> bool:
     fd = _convert_fileobj(fileobj)
     return _is_socket_unix(fd, type, listening, path)
 
-def is_mq(fileobj: IO|int, path: str | None=None) -> bool:
+def is_mq(fileobj: _FileObject | int, path: str | None=None) -> bool:
     fd = _convert_fileobj(fileobj)
     return _is_mq(fd, path)
 
@@ -91,6 +95,6 @@ def listen_fds_with_names(unset_environment: bool=True) -> dict[int, str]:
     """
     composite = _listen_fds_with_names(unset_environment)
     retval: dict[int, str] = {}
-    for i in range(0, typing.cast(int, composite[0])):
-        retval[i+LISTEN_FDS_START] = typing.cast(str, composite[1+i])
+    for i in range(0, _typing.cast(int, composite[0])):
+        retval[i+LISTEN_FDS_START] = _typing.cast(str, composite[1+i])
     return retval
