@@ -47,7 +47,7 @@ def _convert_uuid(s: bytes) -> _uuid.UUID:
     return _uuid.UUID(s.decode())
 
 
-DEFAULT_CONVERTERS = {
+DEFAULT_CONVERTERS: dict[str, _typing.Callable[[_typing.Any], _typing.Any]] = {
     'MESSAGE_ID': _convert_uuid,
     '_MACHINE_ID': _convert_uuid,
     '_BOOT_ID': _convert_uuid,
@@ -161,7 +161,7 @@ class Reader(_Reader):
         if converters is not None:
             self.converters.update(converters)
 
-    def _convert_field(self, key: str, value: _typing.Any) -> _typing.Any:
+    def _convert_field(self, key: str, value: object) -> _typing.Any:  # noqa: ANN401
         """Convert value using self.converters[key].
 
         If `key` is not present in self.converters, a standard unicode decoding
@@ -232,7 +232,7 @@ class Reader(_Reader):
         calling code should not make assumptions about a specific type.
         """
         if super(Reader, self)._next(skip):
-            entry = super(Reader, self)._get_all()
+            entry: dict[str, _typing.Any] = super(Reader, self)._get_all()
             if entry:
                 entry['__REALTIME_TIMESTAMP'] = self._get_realtime()
                 entry['__MONOTONIC_TIMESTAMP'] = self._get_monotonic()
@@ -346,7 +346,7 @@ class Reader(_Reader):
             messageid = messageid.hex
         self.add_match(MESSAGE_ID=messageid)
 
-    def this_boot(self, bootid=None) -> None:
+    def this_boot(self, bootid: None | _uuid.UUID | _typing.Any=None) -> None:  # noqa: ANN401
         """Add match for _BOOT_ID for current boot or the specified boot ID.
 
         If specified, bootid should be either a UUID or a 32 digit hex number.
@@ -357,9 +357,9 @@ class Reader(_Reader):
             bootid = _id128.get_boot().hex
         else:
             bootid = getattr(bootid, 'hex', bootid)
-        self.add_match(_BOOT_ID=bootid)
+        self.add_match(_BOOT_ID=_typing.cast(str | bytes, bootid))
 
-    def this_machine(self, machineid=None)-> None:
+    def this_machine(self, machineid: None | _uuid.UUID | _typing.Any=None)-> None:  # noqa: ANN401
         """Add match for _MACHINE_ID equal to the ID of this machine.
 
         If specified, machineid should be either a UUID or a 32 digit hex
@@ -371,10 +371,10 @@ class Reader(_Reader):
             machineid = _id128.get_machine().hex
         else:
             machineid = getattr(machineid, 'hex', machineid)
-        self.add_match(_MACHINE_ID=machineid)
+        self.add_match(_MACHINE_ID=_typing.cast(str | bytes, machineid))
 
 
-def get_catalog(mid) -> str:
+def get_catalog(mid: _uuid.UUID | str) -> str:
     """Return catalog entry for the specified ID.
 
     `mid` should be either a UUID or a 32 digit hex number.
@@ -384,7 +384,7 @@ def get_catalog(mid) -> str:
     return _get_catalog(mid)
 
 
-def _make_line(field: str, value) -> str | bytes:
+def _make_line(field: str, value: bytes | str | object) -> str | bytes:
     if isinstance(value, bytes):
         return field.encode('utf-8') + b'=' + value
     elif isinstance(value, str):
@@ -393,9 +393,14 @@ def _make_line(field: str, value) -> str | bytes:
         return field + '=' + str(value)
 
 
-def send(MESSAGE: str, MESSAGE_ID: str | _uuid.UUID | None=None,
-         CODE_FILE: str|None=None, CODE_LINE: int | None=None, CODE_FUNC: str|None=None,
-         **kwargs: str | bytes) -> None:
+def send(
+    MESSAGE: str,
+    MESSAGE_ID: str | _uuid.UUID | None=None,
+    CODE_FILE: str|None=None,
+    CODE_LINE: int | None=None,
+    CODE_FUNC: str|None=None,
+    **kwargs: str | bytes
+) -> None:
     r"""Send a message to the journal.
 
     >>> from systemd import journal
@@ -426,7 +431,7 @@ def send(MESSAGE: str, MESSAGE_ID: str | _uuid.UUID | None=None,
 
     if MESSAGE_ID is not None:
         id = getattr(MESSAGE_ID, 'hex', MESSAGE_ID)
-        args.append('MESSAGE_ID=' + id)
+        args.append('MESSAGE_ID=' + _typing.cast(str, id))
 
     if CODE_LINE is CODE_FILE is CODE_FUNC is None:
         CODE_FILE, CODE_LINE, CODE_FUNC = _traceback.extract_stack(limit=2)[0][:3]
@@ -483,6 +488,17 @@ def stream(identifier: str|None=None, priority:int=LOG_INFO, level_prefix: bool=
     fd = stream_fd(identifier, priority, level_prefix)
     return _os.fdopen(fd, 'w', 1)
 
+class _SenderFunction(_typing.Protocol):
+    def __call__(
+        self,
+        MESSAGE: str,
+        MESSAGE_ID: str | _uuid.UUID | None=None,
+        CODE_FILE: str|None=None,
+        CODE_LINE: int | None=None,
+        CODE_FUNC: str|None=None,
+        **kwargs: str | bytes
+    ) -> None:
+        ...
 
 class JournalHandler(_logging.Handler):
     """Journal handler class for the Python logging framework.
@@ -536,7 +552,12 @@ class JournalHandler(_logging.Handler):
     the `sender_function` parameter.
     """
 
-    def __init__(self, level: int=_logging.NOTSET, sender_function=send, **kwargs) -> None:
+    def __init__(
+                 self,
+                 level: int=_logging.NOTSET,
+                 sender_function: _SenderFunction=send,
+                 **kwargs: str | bytes
+             ) -> None:
         super(JournalHandler, self).__init__(level)
 
         for name in kwargs:
@@ -546,7 +567,7 @@ class JournalHandler(_logging.Handler):
             kwargs['SYSLOG_IDENTIFIER'] = _sys.argv[0]
 
         self.send = sender_function
-        self._extra = kwargs
+        self._extra: dict[str, _typing.Any] = kwargs
 
     @classmethod
     def with_args(cls, config: dict|None=None) -> 'JournalHandler':
@@ -562,7 +583,7 @@ class JournalHandler(_logging.Handler):
         """
         return cls(**(config or {}))
 
-    def emit(self, record):
+    def emit(self, record: _logging.LogRecord) -> None:
         """Write `record` as a journal event.
 
         MESSAGE is taken from the message provided by the user, and PRIORITY,
@@ -591,8 +612,8 @@ class JournalHandler(_logging.Handler):
             self.send(msg,
                       PRIORITY=format(pri),
                       LOGGER=record.name,
-                      THREAD_NAME=record.threadName,
-                      PROCESS_NAME=record.processName,
+                      THREAD_NAME=_typing.cast(str, record.threadName),
+                      PROCESS_NAME=_typing.cast(str, record.processName),
                       CODE_FILE=record.pathname,
                       CODE_LINE=record.lineno,
                       CODE_FUNC=record.funcName,
