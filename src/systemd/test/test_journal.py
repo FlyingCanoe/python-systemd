@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
+from typing import Callable
 import contextlib
 import datetime
 import errno
@@ -18,6 +19,7 @@ import pytest
 TEST_MID = uuid.UUID('8441372f8dca4ca98694a6091fd8519f')
 TEST_MID2 = uuid.UUID('8441370000000000000000001fd85000')
 
+ConverterDict=dict[str, Callable[[bytes], str]]
 class MockSender:
     def __init__(self):
         self.buf = []
@@ -272,8 +274,11 @@ def test_reader_has_persistent_files(tmpdir):
             ans = j.has_runtime_files()
     assert ans is False
 
-def test_reader_converters(tmpdir):
-    converters = {'xxx' : lambda arg: 'yyy'}
+def test_reader_converters(tmpdir) -> None:
+    converters: ConverterDict = {
+        'xxx' : lambda arg: 'yyy'
+    }
+    
     j = journal.Reader(path=tmpdir.strpath, converters=converters)
 
     val = j._convert_field('xxx', b'abc')
@@ -282,9 +287,12 @@ def test_reader_converters(tmpdir):
     val = j._convert_field('zzz', b'\200\200')
     assert val == b'\200\200'
 
-def test_reader_convert_entry(tmpdir):
-    converters = {'x1' : lambda arg: 'yyy',
-                  'x2' : lambda arg: 'YYY'}
+def test_reader_convert_entry(tmpdir) -> None:
+    converters: ConverterDict = {
+        'x1': lambda arg: 'yyy',
+        'x2': lambda arg: 'YYY'
+    }
+
     j = journal.Reader(path=tmpdir.strpath, converters=converters)
 
     val = j._convert_entry({'x1' : b'abc',

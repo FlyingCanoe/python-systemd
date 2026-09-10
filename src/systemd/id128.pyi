@@ -120,6 +120,9 @@ SD_MESSAGE_WATCHDOG_PING_FAILED: _UUID
 
 __version__: str
 
+def randomize() -> _UUID:
+    ...
+
 def get_boot() -> _UUID:
     ...
 

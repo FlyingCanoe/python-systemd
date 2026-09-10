@@ -29,7 +29,7 @@ classifiers = [
 ]
 keywords = ["systemd", "journal", "logging", "daemon"]
 requires-python = ">=3.9"
-dependencies = []
+dependencies = ["pytest"]
 
 [project.urls]
 Homepage = "https://github.com/systemd/python-systemd"
@@ -55,7 +55,7 @@ build-backend = "mesonpy"
 
 [tool.coverage.run]
 source = ["systemd"]
-omit = ["systemd/test/*"]
+# omit = ["systemd/test/*"]
 
 [tool.coverage.report]
 exclude_lines = [
