@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
+from types import TracebackType
 import typing as _typing
 import io as _io
 import sys as _sys
@@ -373,6 +374,20 @@ class Reader(_Reader):
             machineid = getattr(machineid, 'hex', machineid)
         self.add_match(_MACHINE_ID=_typing.cast(str | bytes, machineid))
 
+    def close(self) -> None:
+        super(Reader, self).close()
+
+    def __enter__(self) -> 'Reader':
+        return self
+    
+    def __exit__(
+                 self,
+                 type: type[BaseException] | None,
+                 exc_value: BaseException | None,
+                 traceback: TracebackType | None) -> bool:  # ty: ignore[invalid-method-override]
+        self.close()
+        return False
+
 
 def get_catalog(mid: _uuid.UUID | str) -> str:
     """Return catalog entry for the specified ID.
@@ -556,7 +571,7 @@ class JournalHandler(_logging.Handler):
                  self,
                  level: int=_logging.NOTSET,
                  sender_function: _SenderFunction=send,
-                 **kwargs: str | bytes
+                 **kwargs: str | bytes | _uuid.UUID
              ) -> None:
         super(JournalHandler, self).__init__(level)
 
