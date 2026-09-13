@@ -571,7 +571,7 @@ class JournalHandler(_logging.Handler):
                  self,
                  level: int=_logging.NOTSET,
                  sender_function: _SenderFunction=send,
-                 **kwargs: str | bytes | _uuid.UUID
+                 **kwargs: str | bytes | _uuid.UUID | int,
              ) -> None:
         super(JournalHandler, self).__init__(level)
 

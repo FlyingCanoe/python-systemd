@@ -190,12 +190,12 @@ def test_is_socket_sockaddr():
                     assert not is_socket_sockaddr(arg, '127.0.0.1', socket.SOCK_DGRAM)
 
             with pytest.raises(ValueError):
-                _is_socket_sockaddr(arg, '127.0.0.1', 0, 123456)
+                _is_socket_sockaddr(arg, '127.0.0.1', 0, 123456)  # ty: ignore[invalid-argument-type]
 
             with skip_enosys():
-                assert not _is_socket_sockaddr(arg, '129.168.11.11:23', socket.SOCK_STREAM)
+                assert not _is_socket_sockaddr(arg, '129.168.11.11:23', socket.SOCK_STREAM)  # ty: ignore[invalid-argument-type]
             with skip_enosys():
-                assert not _is_socket_sockaddr(arg, '127.0.0.1', socket.SOCK_DGRAM)
+                assert not _is_socket_sockaddr(arg, '127.0.0.1', socket.SOCK_DGRAM)  # ty: ignore[invalid-argument-type]
 
             sock.listen(11)
 

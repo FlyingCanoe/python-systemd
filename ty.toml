@@ -1,4 +1,4 @@
-[src]
-exclude = ["src/systemd/test"]
+# [src]
+# exclude = ["src/systemd/test"]
 
 

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-from typing import Callable
+from typing import Callable, TypedDict, final
 import contextlib
 import datetime
 import errno
@@ -21,7 +21,7 @@ TEST_MID2 = uuid.UUID('8441370000000000000000001fd85000')
 
 ConverterDict=dict[str, Callable[[bytes], str]]
 class MockSender:
-    def __init__(self):
+    def __init__(self) -> None:
         self.buf = []
 
     def send(self, MESSAGE, MESSAGE_ID=None,
@@ -46,7 +46,7 @@ class MockSender:
         self.buf.append(args)
 
 @contextlib.contextmanager
-def skip_oserror(code):
+def skip_oserror(code: int):
     try:
         yield
     except OSError as e:
@@ -83,15 +83,15 @@ def test_priorities():
 
 
 def test_journalhandler_init_exception():
-    kw = {' X  ':3}
+    kw = {' X  ':3}       
     with pytest.raises(ValueError):
-        journal.JournalHandler(**kw)
+        journal.JournalHandler(**kw)  # ty: ignore[invalid-argument-type]
     with pytest.raises(ValueError):
         journal.JournalHandler.with_args(kw)
 
 def test_journalhandler_init():
     kw = {'X':3, 'X3':4}
-    journal.JournalHandler(logging.INFO, **kw)
+    journal.JournalHandler(logging.INFO, X=3, X3=4)
     kw['level'] = logging.INFO
     journal.JournalHandler.with_args(kw)
 

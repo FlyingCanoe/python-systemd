@@ -29,7 +29,7 @@ classifiers = [
 ]
 keywords = ["systemd", "journal", "logging", "daemon"]
 requires-python = ">=3.9"
-dependencies = ["pytest"]
+dependencies = []
 
 [project.urls]
 Homepage = "https://github.com/systemd/python-systemd"
@@ -70,4 +70,4 @@ addopts = "--doctest-modules --doctest-glob=*.rst --ignore=setup.py"
 norecursedirs = ".git build"
 
 [tool.ruff.lint]
-select=["ANN"]
+select=[]
